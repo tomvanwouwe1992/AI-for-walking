@@ -5,6 +5,7 @@
 %% Coding by Christian Mayr (matlab_neat@web.de)
 
 function population = runner_simulation(population)    %(population, inputdata)
+global NEAT_PARAMS;
 Path = pwd;
 model_name = fullfile(Path,'gait9dof18musc.osim');
 timevector = [0.0 15.0];
@@ -13,7 +14,7 @@ folder_dll = fullfile(pwd, '/../OpenSimInstall/bin');
 old_PATH = getenv('PATH');
 setenv('PATH', [folder_dll ';' old_PATH]);
 print = 0;
-parfor j = 1:length(population)
+for j = 1:length(population)
     
     individual = population(j);
    
