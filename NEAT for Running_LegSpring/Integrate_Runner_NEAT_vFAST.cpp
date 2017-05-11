@@ -138,8 +138,8 @@ Vector get_NN_inputs(Model* osimModel, State& s, ForceReporter* forcereporter, V
 	inputs[1] = sqrt((kinematics[1] - PosCALCNR[0]) * (kinematics[1] - PosCALCNR[0]) + (kinematics[2] - PosCALCNR[1]) * (kinematics[2] - PosCALCNR[1]));
 
 	// Angle of the legs, seen as one segment (pelvis to calcaneus). atan2(y,x) 
-	inputs[2] = atan2(PosCALCNL[1] - kinematics[2], PosCALCNL[0] - kinematics[1]);
-	inputs[3] = atan2(PosCALCNR[1] - kinematics[2], PosCALCNR[0] - kinematics[1]);
+	inputs[2] = atan2(PosCALCNL[1] - kinematics[2], PosCALCNL[0] - kinematics[1]) /  3.1415;
+	inputs[3] = atan2(PosCALCNR[1] - kinematics[2], PosCALCNR[0] - kinematics[1]) /  3.1415;
 	
 	// Pelvis y-position
 	inputs[4] = kinematics[2];
@@ -154,7 +154,7 @@ Vector get_NN_inputs(Model* osimModel, State& s, ForceReporter* forcereporter, V
 	double dx = VelHead[0] - kinematics[11];
 	double dy = VelHead[1] - kinematics[12];
 	//Angle
-	inputs[7] = atan2(y, x);
+	inputs[7] = atan2(y, x) / 3.1415;
 	//Angular Velocity - based on derivative of atan2 =  [-y/(x²+y²)]*dx + [x/(x²+y²)]*dy
 	inputs[8] = (-y / (x * x + y * y)) * dx + (x / (x * x + y * y)) * dy; 
 
