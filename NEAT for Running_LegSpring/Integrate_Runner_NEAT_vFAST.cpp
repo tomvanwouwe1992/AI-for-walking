@@ -167,13 +167,30 @@ Vector get_NN_inputs(Model* osimModel, State& s, ForceReporter* forcereporter, V
 	if (contact_Lx == 0.0) { } //No contact - COP is zero
 	else { inputs[11] = contact_Lx - COM[0]; }
     if (contact_Rx == 0.0) { } //No contact - COP is zero
-	else { inputs[11] = contact_Rx - COM[0]; }
+	else { inputs[12] = contact_Rx - COM[0]; }
     
-	//Contact Information - vertical component of the contact force
-	inputs[13] = Left_Foot_Contact[1];
-	inputs[14] = Right_Foot_Contact[1];
+	//Contact Information - vertical component of the contact force normalized by total body weight
+	inputs[13] = Left_Foot_Contact[1]/(9.81*73);
+	inputs[14] = Right_Foot_Contact[1]/(9.81*73);
 	
 	return inputs;
+    /*INPUTS:
+     0. Left leg length
+     1. Right leg length
+     2. Left leg angle wrt worldframe
+     3. Right leg angle wrt worldframe
+     4. Pelvis y-position
+     5. Pelvis x-velocity
+     6. Pelvis y-velocity
+     7. Trunk angle
+     8. Trunk angular velocity
+     9. Left ankle angle
+     10. Right ankle angle
+     11. Left COP to COM
+     12. Right COP to COM
+     13. Left vertical contact force
+     14. Right vertical contact force
+     */
 }
 
 Vector NN_controller(Vector inputs, std::tuple<Vector, Vector, Vector> nodegenes, std::tuple<Vector, Vector, Vector, Vector>  connectiongenes, Vector NN_info) {
@@ -269,8 +286,8 @@ public:
 		cost[0] = cost[0] + inputs[7] *  inputs[7];
 			
 		// For reasons of efficiency we want to stop the integration early if the pelvis goes to low or the velocity becomes negative.		
-		if (inputs[4] < 0.70) { shouldTerminate = true; mexPrintf("Pelvis low"); }
-		if (inputs[5] < -0.10) { shouldTerminate = true; mexPrintf("Velocity negative"); }
+		if (inputs[4] < 0.70) { shouldTerminate = true; mexPrintf("Pelvis low \n"); }
+		if (inputs[5] < -0.10) { shouldTerminate = true; mexPrintf("Velocity negative \n"); }
 		
 		// Calculate the output of the controller --> muscle activations
 		Vector activation_vector = NN_controller(inputs, get<0>(NN_structure), get<1>(NN_structure), get<2>(NN_structure));

@@ -2,17 +2,11 @@
 % IN(1) - directory of the .cpp file to compile
 % IN(2) - name of the .cpp file to compile
 
-function []=compilamex(varargin)
+function []=compileCPP()
 clear mex;
-function_dir=varargin{1};
-function_name=varargin{2};
-path = pwd;
-
-if length(varargin)>2
-    opensim_dir=varargin{3};
-else
-    opensim_dir = fullfile(pwd, '/../OpenSimInstall');
-end
+function_dir=pwd;
+function_name='Integrate_Runner_NEAT_vFAST.cpp';
+opensim_dir = fullfile(pwd, '/../OpenSimInstall');
 cpp_file=[function_dir,'\',function_name];
 
 fprintf('Compiling MexfastID function ... \n');
