@@ -8,13 +8,13 @@ function population = runner_simulation(population)    %(population, inputdata)
 Path = pwd;
 model_name = fullfile(Path,'gait9dof18musc.osim');
 timevector = [0.0 15.0];
-folder_dll='C:\Users\u0113530\Documents\AI RUNNING\OpenSimInstall\bin';
+folder_dll='F:\u0113530\AI RUNNING\OpenSimInstall\bin';
 old_PATH = getenv('PATH');
 setenv('PATH', [folder_dll ';' old_PATH]);
-for j = 1:length(population)
+parfor j = 1:length(population)
     
     individual = population(j);
-   % save('individual','individual');
+   
         
     NN_info = [ 14    18   size(individual.nodegenes,2)-14-18-1    size(individual.connectiongenes,2) ]; % input - output - hiddden - connection
     
