@@ -395,7 +395,7 @@ private:
     double* cost;
 };
 
-void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<Vector,Vector,Vector> nodegenes,std::tuple<Vector,Vector,Vector,Vector> connectiongenes, Vector NN_info)
+void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<Vector,Vector,Vector> nodegenes,std::tuple<Vector,Vector,Vector,Vector> connectiongenes, Vector NN_info, double print)
 {
     std::streambuf* cout_sbuf = std::cout.rdbuf(); // save original sbuf
     std::ofstream   fout("cout.txt");
@@ -440,7 +440,7 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     manager.integrate(s);
     Storage output_storage = manager.getStateStorage();                     //Store&Output of the states as .sto-file
     Array<double> end_state = output_storage.getLastStateVector()->getData();
-   // output_storage.print("output_1.sto");   
+    
     Vec3 massCenterPos = osimModel->calcMassCenterPosition(s);
    
     const Storage* force_storage = &(reporter->getForceStorage());
@@ -451,9 +451,9 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     cost_function[0] = 1 / (0.25 + cost_function[0]);
     mexPrintf("   Trunk Regularization Term = %f", cost_function[0]);
     mexPrintf("\n");
-    double cost = massCenterPos[0];//+0.1*end_state[0];
+    double cost = massCenterPos[0];
     double time = output_storage.getLastTime();
-    //double angular_cost = - 0.02 * (cost_function[0] / (output_storage.getLastTime() / 0.01));
+
     mexPrintf("  DISTANCE WALKED  =  ");
     mexPrintf("%f",cost);
     mexPrintf("\n");
@@ -464,22 +464,20 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     mexPrintf("Time-distance term =  %f", time_distance);
     mexPrintf("\n");
    
-    //force_storage->print("GaitProblem_forces.mot");
     cost_function[0] = cost_function[0] + time_distance;
-
+    if (print == 1){    output_storage.print("output_1.sto");  force_storage->print("GaitProblem_forces.mot"); }
     return;
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
-{
-    
+{    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //	OPEN Model
-    
     char *osimFileName_ptr;
     osimFileName_ptr = mxArrayToString(prhs[0]);
     std::string osimFileName = std::string(&osimFileName_ptr[0]);
-    
+    Model model = Model(osimFileName);
+    Model *osimModel = &model;
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //	IMPORT timevector
@@ -497,9 +495,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     dim_nodegenes = mxGetDimensions(prhs[2]);
     int n_nodes = *(dim_nodegenes+1);
     int n_rows = *(dim_nodegenes+0);
-    nodegenes_ptr = mxGetPr(prhs[2]);
-    
-       
+    nodegenes_ptr = mxGetPr(prhs[2]);   
     
     Vector IDs    = Vector(n_nodes, 0.0);
     Vector input  = Vector(n_nodes, 0.0);
@@ -511,9 +507,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         input[j] = nodegenes_ptr[j*4+2 ];
         output[j] = nodegenes_ptr[j*4+3 ];
     }
+    // Make tuple that holds all necessary info of the nodegenes (ID - inputvalue - outputvalue)
     std::tuple<Vector,Vector,Vector> nodegenes = make_tuple(IDs, input, output);
-    
-    
+        
     dim_connectiongenes = mxGetDimensions(prhs[3]);
     int n_connections = *(dim_connectiongenes+1);
     connectiongenes_ptr = mxGetPr(prhs[3]);
@@ -530,8 +526,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         weight[j]  = connectiongenes_ptr[j*5 + 3];
         enabled[j] = connectiongenes_ptr[j*5 + 4];
     }
+    // Make tuple that holds all necessary info of the connections (from node to node - weight - connection enabled?)
     std::tuple<Vector,Vector,Vector,Vector> connectiongenes = make_tuple(from, to, weight, enabled);
     
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //	IMPORT information on the size of the neural network
     double* NN_info_ptr;
     NN_info_ptr = mxGetPr(prhs[4]);
     Vector NN_info = Vector(4, 0.0);
@@ -540,17 +539,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     NN_info[2] = NN_info_ptr[2];
     NN_info[3] = NN_info_ptr[3];
     
-    Model model = Model(osimFileName);
-    Model *osimModel = &model;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //	Print Information (check whether output will be printed)
+    double* print_ptr
+    print_ptr = mxGetPr(prhs[5]);
+    double print = print[0];
     
-    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //	Prepare output to matlab
     plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
     double *cost_function;
     cost_function	= mxGetPr(plhs[0]);
     
-    main(TimeVec, osimModel, cost_function, nodegenes, connectiongenes, NN_info);
-    
-    
+    //Call main function
+    main(TimeVec, osimModel, cost_function, nodegenes, connectiongenes, NN_info, print);
 }
 
 

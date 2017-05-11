@@ -1,5 +1,5 @@
 % Tom Van Wouwe
-
+global NEAT_PARAMS
 
 NEAT_PARAMS.max_generation      = 5000;
 NEAT_PARAMS.population_size     = 120;  
