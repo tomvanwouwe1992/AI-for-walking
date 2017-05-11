@@ -89,9 +89,9 @@ Vector get_states(Model* osimModel, State& s) {
     return observation;
 }
 
-    Vector NN_controller(Vector inputs,  std::tuple<Vector,Vector,Vector> nodegenes, std::tuple<Vector,Vector,Vector,Vector>  connectiongenes, Vector NN_info, Model* osimModel, State& s, Vector ContactInfo){
+    Vector NN_controller(Vector inputs,  std::tuple<Vector,Vector,Vector> nodegenes, std::tuple<Vector,Vector,Vector,Vector>  connectiongenes, Vector NN_info, Model* osimModel, State& s, Vector ContactInfo, double* cost_function){
     // We simplify the observationvector (inputs) to a limited number of states
-    Vector adapted_inputs(8, 0.0);
+    Vector adapted_inputs(14, 0.0);
     
     const SimbodyEngine& SBE = osimModel->getSimbodyEngine();               // Get simbody engine - subclass that contains methods to provide information/calculation on the model (e.g.: calculate distance between two bodies)
     const BodySet& BS = osimModel->getBodySet();
@@ -126,14 +126,17 @@ Vector get_states(Model* osimModel, State& s) {
     double dx = VelHead[0] - inputs[5];
             
     adapted_inputs[6] = atan2(y , x);
+    
     adapted_inputs[7] = (-y / (x * x + y * y)) * dx + (x / (x * x + y * y)) * dy; //Derivative of atan2 -->  [-y/(x²+y²)]*dx + [x/(x²+y²)]*dy
-        
+    
+    cost_function[0] = cost_function[0] + adapted_inputs[7] * adapted_inputs[7];
+    cout << cost_function[0];
     //Ankle angle
     adapted_inputs[8] = inputs[9];
     adapted_inputs[9] = inputs[12];
     
     //Contact Inputs
-    if (ContactInfo[0] == 0){
+    if (ContactInfo[0] == 0.0){
         adapted_inputs[10] = 0;
         adapted_inputs[11] = 0;
     }
@@ -156,7 +159,7 @@ Vector get_states(Model* osimModel, State& s) {
     int index_loop=0;
     
     Vector output_signal(number_of_outputnodes, 0.0);
-    
+   
     Vector nodegenes_ID = get<0>(nodegenes);
     Vector nodegenes_input = get<1>(nodegenes);
     Vector nodegenes_output = get<2>(nodegenes);
@@ -164,7 +167,7 @@ Vector get_states(Model* osimModel, State& s) {
     Vector connectiongenes_to = get<1>(connectiongenes);
     Vector connectiongenes_weight = get<2>(connectiongenes);
     Vector connectiongenes_enabled = get<3>(connectiongenes);
-    
+    ;
     
     for (int i = number_of_inputnodes + 1; i < number_of_inputnodes + number_of_outputnodes + number_of_hiddennodes + 1; i++){nodegenes_input[i] = 0;}
     nodegenes_input[number_of_inputnodes] = 1;
@@ -262,7 +265,7 @@ tuple<double,bool> Penalty_Calc(Vector observation, Model* osimModel, State& s) 
     bool stop_integration;
     stop_integration = false;
     if (observation[3] < 0.70) {stop_integration = true;mexPrintf("Pelvis low");}
-    if (observation[5] < -0.05) {stop_integration = true;mexPrintf("Velocity negative");}
+    if (observation[5] < -0.10) {stop_integration = true;mexPrintf("Velocity negative");}
    // if (observation[26] < -0.06){stop_integration = true;}
    // if (observation[28] < -0.06){stop_integration = true;}
     
@@ -375,7 +378,7 @@ public:
         shouldTerminate = get<1>(result_penalty);
         //cost[0] = cost[0] + get<0>(result_penalty);
                
-        Vector activation_vector = NN_controller(states, get<0>(NN_structure), get<1>(NN_structure), get<2>(NN_structure), model, state, ContactInfo);
+        Vector activation_vector = NN_controller(states, get<0>(NN_structure), get<1>(NN_structure), get<2>(NN_structure), model, state, ContactInfo, cost);
             
         Vector& activations = state.updZ();
         
@@ -414,11 +417,10 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     MultibodySystem& system_ref = osimModel->updMultibodySystem();
     
     MyPeriodicController* myPeriodicController = new MyPeriodicController(eventinterval, osimModel, NN_structure, cost_function, reporter);
-    
-    MyIntegrationStopper* myIntegrationStopper = new MyIntegrationStopper(osimModel);
-    
     system_ref.addEventHandler(myPeriodicController);
+    
     //system_ref.addEventHandler(myIntegrationStopper);
+    //MyIntegrationStopper* myIntegrationStopper = new MyIntegrationStopper(osimModel);
     
     // ******************** OpenSimLand***********************//
     State& s = osimModel->initializeState();
@@ -430,11 +432,6 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     osimModel->equilibrateMuscles(s);
     osimModel->getMultibodySystem().realize(s, Stage::Dynamics);
     
-   //  BodyKinematics* BodyKinematics_reporter = new BodyKinematics(osimModel, true);
-   // BodyKinematics_reporter->setModel(*osimModel);
-    //BodyKinematics_reporter->setRecordCenterOfMass(true);
-    //osimModel->addAnalysis(BodyKinematics_reporter);
-    
     RungeKuttaMersonIntegrator integrator(osimModel->getMultibodySystem());     //Initialize integrator (RungeKuttaMerson-type)
     integrator.setAccuracy(1e-6);
     Manager manager(*osimModel, integrator);
@@ -445,17 +442,11 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     Array<double> end_state = output_storage.getLastStateVector()->getData();
     output_storage.print("output_1.sto");   
     Vec3 massCenterPos = osimModel->calcMassCenterPosition(s);
-    
+   
     const Storage* force_storage = &(reporter->getForceStorage());
-
-    
-//     Array<double> X_com_LToes; Array<double>& X_com_LToes_ref = X_com_LToes; 
-//     Body_position->getDataColumn("toes_l_X",X_com_LToes_ref, 0.0);
-    
-    //BodyKinematics_reporter->printResults("BodyKinematics");
-    //BodyK_storage->print("BodyKinematics.mot");
-    
-    
+    mexPrintf("   Cost of trunk motion = %f", cost_function[0]);
+    cost_function[0] = cost_function[0] / (force_storage->getLastTime() / 0.01);
+    mexPrintf("   Cost of trunk motion per time = %f", cost_function[0]);
    
     double cost = massCenterPos[0];//+0.1*end_state[0];
     double time = output_storage.getLastTime();
@@ -463,13 +454,12 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     mexPrintf("  DISTANCE WALKED  =  ");
     mexPrintf("%f",cost);
     mexPrintf("\n");
-    
     mexPrintf("  TIME WALKED  =  ");
     mexPrintf("%f",time);
     mexPrintf("\n");
    
     //force_storage->print("GaitProblem_forces.mot");
-    cost_function[0] = cost*sqrt(time);
+    cost_function[0] = cost_function[0] + cost*sqrt(time);
 
     return;
 }
@@ -559,25 +549,3 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 }
 
 
-
-//
-    // COP calculation
-//     Storage* Body_position = BodyKinematics_reporter->getPositionStorage();
-//     Array<double> X_com; Array<double>& X_com_ref = X_com; 
-//     Body_position->getDataColumn("center_of_mass_X", X_com_ref, 0.0);
-//     
-//     Array<double> X_com_RToes; Array<double>& X_com_RToes_ref = X_com_RToes; 
-//     Body_position->getDataColumn("toes_r_X", X_com_RToes_ref, 0.0);
-//     Array<double> Y_com_RToes; Array<double>& Y_com_RToes_ref = Y_com_RToes; 
-//     Body_position->getDataColumn("toes_r_Y", Y_com_RToes_ref, 0.0);
-//     Array<double> Fx_RToes; Array<double>& Fx_RToes_ref = Fx_RToes; 
-//     force_storage->getDataColumn(30, Fx_RToes_ref);
-//     Array<double> Fy_RToes; Array<double>& Fy_RToes_ref = Fy_RToes; 
-//     force_storage->getDataColumn(31, Fy_RToes_ref);
-//     Array<double> M; Array<double>& M_ref = M; 
-//     force_storage->getDataColumn(35, M_ref);
-//     Array<double> x_cop(0.0, M.getSize());
-//     for (int i = 0; i < M.getSize(); i++){
-//         x_cop[i] =((M[i]-Fx_RToes[i] * Y_com_RToes[i]) / Fy_RToes[i]) + X_com_RToes[i];
-//     }
-//     cout << x_cop;
