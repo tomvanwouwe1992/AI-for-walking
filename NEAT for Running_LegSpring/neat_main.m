@@ -99,19 +99,19 @@ crossover.percentage=0.80;                 % Percentage governs the way (crossov
 % crossover. If crossover has been selected, the interspecies probability
 % governs the intra/interspecies parent composition being used. WE STILL HAVE TO FIND OUT DETAILS OF THIS. The multipoint probability governs for the
 % standard-crossover in which way matching connection genes are inherited randomly from both parents.
-crossover.probability_interspecies=0.001;
+crossover.probability_interspecies=0.00;
 crossover.probability_multipoint=0.6;     % In the (1-crossover.probability_multipoint) cases, weights of the new connection genes are the mean of the corresponding parent genes
 
 % Mutation
 % After cross-over we will mutate. 3 possible mutations: add node, add
 % link, mutation of weights. (Simgoid curve steepness is constant)
-mutation.probability_add_node=0.002;        % Chance of adding a node
-mutation.probability_add_connection=0.002;  % Chance of adding a connection
-mutation.probability_recurrency=0.2;        % If we are in add_connection_mutation, this governs if a recurrent connection is allowed. Note: this will only activate if the random connection is a recurrent one, otherwise the connection is simply accepted. If no possible non-recurrent connections exist for the current node genes, then for e.g. a probability of 0.1, 9 times out of 10 no connection is added.
-mutation.probability_mutate_weight=0.30;    % Chance of mutating the weights
+mutation.probability_add_node=0.03;        % Chance of adding a node
+mutation.probability_add_connection=0.05;  % Chance of adding a connection
+mutation.probability_recurrency=0.0;        % If we are in add_connection_mutation, this governs if a recurrent connection is allowed. Note: this will only activate if the random connection is a recurrent one, otherwise the connection is simply accepted. If no possible non-recurrent connections exist for the current node genes, then for e.g. a probability of 0.1, 9 times out of 10 no connection is added.
+mutation.probability_mutate_weight=0.90;    % Chance of mutating the weights
 mutation.weight_cap=8;                      % Weights will be restricted from -mutation.weight_cap to mutation.weight_cap. We need to make sure we can cover our possible output range but don't go over it too much.
-mutation.weight_range=1.5;                  % Random distribution with width mutation.weight_range, centered on 0. mutation range of 5 will give random distribution from -2.5 to 2.5
-mutation.probability_gene_reenabled=0.15;   % Probability of a connection gene being reenabled in offspring if it was inherited disabled
+mutation.weight_range=5;                  % Random distribution with width mutation.weight_range, centered on 0. mutation range of 5 will give random distribution from -2.5 to 2.5
+mutation.probability_gene_reenabled=0.25;   % Probability of a connection gene being reenabled in offspring if it was inherited disabled
 
 
 %%%%%%%%%%%%%%%%main algorithm%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -178,7 +178,7 @@ if load_flag==0
     end
     generation=1;
 else % start with saved version of evolution
-    load 'neatsave248'
+    load 'neatsave66'
 end
 
 %%%

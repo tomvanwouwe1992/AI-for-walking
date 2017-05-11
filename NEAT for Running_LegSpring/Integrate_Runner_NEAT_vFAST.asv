@@ -440,17 +440,16 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     manager.integrate(s);
     Storage output_storage = manager.getStateStorage();                     //Store&Output of the states as .sto-file
     Array<double> end_state = output_storage.getLastStateVector()->getData();
-   // output_storage.print("output_1.sto");   
+    output_storage.print("output_1.sto");   
     Vec3 massCenterPos = osimModel->calcMassCenterPosition(s);
    
     const Storage* force_storage = &(reporter->getForceStorage());
     
     cost_function[0] = cost_function[0] / (force_storage->getLastTime() / 0.01);
     
-    mexPrintf("   Trunk Excursion = %f", cost_function[0]);
+    
     cost_function[0] = 1 / (0.25 + cost_function[0]);
     mexPrintf("   Trunk Regularization Term = %f", cost_function[0]);
-    mexPrintf("\n");
     double cost = massCenterPos[0];//+0.1*end_state[0];
     double time = output_storage.getLastTime();
     //double angular_cost = - 0.02 * (cost_function[0] / (output_storage.getLastTime() / 0.01));
@@ -460,12 +459,11 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
     mexPrintf("  TIME WALKED  =  ");
     mexPrintf("%f",time);
     mexPrintf("\n");
-    double time_distance = cost*sqrt(time);
-    mexPrintf("Time-distance term =  %f", time_distance);
-    mexPrintf("\n");
+    
+    mexPrintf("Cost function 
    
     //force_storage->print("GaitProblem_forces.mot");
-    cost_function[0] = cost_function[0] + time_distance;
+    cost_function[0] = cost_function[0] + cost*sqrt(time);
 
     return;
 }
@@ -499,7 +497,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     int n_rows = *(dim_nodegenes+0);
     nodegenes_ptr = mxGetPr(prhs[2]);
     
-       
+    mexPrintf("%i",n_nodes);
+   
     
     Vector IDs    = Vector(n_nodes, 0.0);
     Vector input  = Vector(n_nodes, 0.0);
@@ -522,7 +521,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Vector to = Vector(n_connections, 0.0);
     Vector weight = Vector(n_connections, 0.0);
     Vector enabled = Vector(n_connections, 0.0);
-    
+    mexPrintf("%i",n_connections);
     for (int j = 0; j < n_connections; j++)
     {
         from[j]    = connectiongenes_ptr[j*5+1];
