@@ -157,7 +157,7 @@ Vector get_NN_inputs(Model* osimModel, State& s, ForceReporter* forcereporter, V
 	inputs[7] = atan2(y, x) / 3.1415;
 	//Angular Velocity - based on derivative of atan2 =  [-y/(x²+y²)]*dx + [x/(x²+y²)]*dy
 	inputs[8] = (-y / (x * x + y * y)) * dx + (x / (x * x + y * y)) * dy; 
-
+    cout << inputs[7] << endl;
 	//Ankle angle
 	inputs[9] = kinematics[5];
 	inputs[10] = kinematics[8];
@@ -283,8 +283,8 @@ public:
 		//Get the inputs to the neural network controller - based on the model and its state.
 		Vector inputs = get_NN_inputs(model, state, force_reporter, get<2>(NN_structure));
 		// Part of our costfunction is the integral of the trunk angular velocity squared. We add it every period to the cost function.
-		cost[0] = cost[0] + inputs[7] *  inputs[7];
-			
+		cost[0] = cost[0] + inputs[8] *  inputs[8];
+		cout << "cost = " << cost[0] << endl;
 		// For reasons of efficiency we want to stop the integration early if the pelvis goes to low or the velocity becomes negative.		
 		if (inputs[4] < 0.70) { shouldTerminate = true; mexPrintf("Pelvis low \n"); }
 		if (inputs[5] < -0.10) { shouldTerminate = true; mexPrintf("Velocity negative \n"); }
@@ -377,11 +377,11 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
 			mexPrintf("%f", time);
 			mexPrintf("\n");
 
-	double time_distance = COM_x*sqrt(time);
+	double time_distance = COM_x;
 	mexPrintf("Time-distance term =  %f", time_distance);
 	mexPrintf("\n");
 
-	cost_function[0] = cost_function[0] + 4*time_distance;
+	cost_function[0] = 0.2*cost_function[0] + time_distance;
 
 	// If print option is turned 'on' the states and forces are printed into a file.
 	if (print == 1) { output_storage.print("output_states.sto");  force_storage->print("output_forces.mot"); }

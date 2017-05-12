@@ -15,7 +15,7 @@ maxgeneration=NEAT_PARAMS.max_generation; % maximum number of generations for ge
 
 % if set to 1, will load population, generation, innovation_record and species_record from neatsave.mat at start of algorithm, this allows us to continue from where we were at when a certain interruption would occur
 % if set to 0, algorithm will start with initial population, new species record and new innovation record, at generation=1 (default option)
-load_flag=0;       % Choose for making new initial (random) population
+load_flag=1;       % Choose for making new initial (random) population
 save_flag=1;       % if set to 1, will save population, generation, innovation_record and species_record to neatsave.mat at every generation (default option)
 
 average_number_non_disabled_connections=[];      % Will hold the average number over a whole population
@@ -178,7 +178,7 @@ if load_flag==0
     end
     generation=1;
 else % start with saved version of evolution
-    load 'neatsave66'
+    load 'neatsave106'
 end
 
 %%%
