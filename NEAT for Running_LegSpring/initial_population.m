@@ -79,7 +79,7 @@ for index_individual=1:number_individuals
    % We specify connection information                                    
    population(index_individual).connectiongenes=[1:number_connections;                                    % Innovation number
                                                  connection_matrix;                                       % from - to nodes have been already worked out above based on the basic structure
-                                                 rand(1,number_connections)*2-1;                          % Weights are random numbers that in between -1 to 1.
+                                                 rand(1,number_connections)*1-0.5;                          % Weights are random numbers that in between -1 to 1.
                                                  ones(1,number_connections)];                             % All connections are enabled
    population(index_individual).fitness=0;                                                                % Fitness is set to 0
    population(index_individual).species=0;                                                                % Species to which our individual/member belongs to is 0.
