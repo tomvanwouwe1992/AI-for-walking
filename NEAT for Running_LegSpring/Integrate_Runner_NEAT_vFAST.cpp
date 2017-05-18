@@ -157,7 +157,7 @@ Vector get_NN_inputs(Model* osimModel, State& s, ForceReporter* forcereporter, V
 	inputs[7] = atan2(y, x) / 3.1415;
 	//Angular Velocity - based on derivative of atan2 =  [-y/(x²+y²)]*dx + [x/(x²+y²)]*dy
 	inputs[8] = (-y / (x * x + y * y)) * dx + (x / (x * x + y * y)) * dy; 
-    cout << inputs[7] << endl;
+    //cout << inputs[7] << endl;
 	//Ankle angle
 	inputs[9] = kinematics[5];
 	inputs[10] = kinematics[8];
@@ -283,7 +283,7 @@ public:
 		//Get the inputs to the neural network controller - based on the model and its state.
 		Vector inputs = get_NN_inputs(model, state, force_reporter, get<2>(NN_structure));
 		// Part of our costfunction is the integral of the trunk angular velocity squared. We add it every period to the cost function.
-		cost[0] = cost[0] + inputs[8] *  inputs[8];
+		cost[0] = cost[0] + inputs[7] *  inputs[7];
 		cout << "cost = " << cost[0] << endl;
 		// For reasons of efficiency we want to stop the integration early if the pelvis goes to low or the velocity becomes negative.		
 		if (inputs[4] < 0.70) { shouldTerminate = true; mexPrintf("Pelvis low \n"); }
@@ -361,7 +361,7 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
 		
 	// We already added a term integrating the trunk angular velocity wrt the vertical. We need to divide through the integrationtime (number of steps at which a sample is taken :: 10ms)
 	cost_function[0] = cost_function[0] / (force_storage->getLastTime() / 0.01);
-	cost_function[0] = 1 / (0.25 + cost_function[0]);  // Make it a regularization term (the NEAT algorithm will maximize the cost function)
+	cost_function[0] = 0.25 / (0.25 + cost_function[0]);  // Make it a regularization term (the NEAT algorithm will maximize the cost function)
 			mexPrintf("   Trunk Regularization Term = %f", cost_function[0]);
 			mexPrintf("\n");
     // Calculate the distance moved of the COM in x direction
@@ -381,7 +381,7 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
 	mexPrintf("Time-distance term =  %f", time_distance);
 	mexPrintf("\n");
 
-	cost_function[0] = 0.2*cost_function[0] + time_distance;
+	cost_function[0] = 0.05*cost_function[0] + time_distance;
 
 	// If print option is turned 'on' the states and forces are printed into a file.
 	if (print == 1) { output_storage.print("output_states.sto");  force_storage->print("output_forces.mot"); }
