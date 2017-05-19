@@ -384,7 +384,16 @@ void main(double* TimeVec, Model* osimModel, double* cost_function, std::tuple<V
 	cost_function[0] = 0.05*cost_function[0] + time_distance;
 
 	// If print option is turned 'on' the states and forces are printed into a file.
-	if (print == 1) { output_storage.print("output_states.sto");  force_storage->print("output_forces.mot"); }
+	
+	 
+
+	if (print == 1) { 
+	
+    //We first interpolate the output storages to limit the size of the storage files
+	output_storage.resample(0.01,1);
+	//force_storage->interpolateAt(targetTimes_ref);
+	output_storage.print("output_states.sto");  
+	force_storage->print("output_forces.mot"); }
 	return;
 }
 
