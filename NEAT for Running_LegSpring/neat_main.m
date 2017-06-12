@@ -116,6 +116,20 @@ mutation.probability_gene_reenabled=0.25;   % Probability of a connection gene b
 
 %%%%%%%%%%%%%%%%main algorithm%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Perform covariance matrix adaptation optimization on the first individual of the initial population
+[population,innovation_record]=initial_population(population_size, number_input_nodes, number_output_nodes, vector_connected_input_nodes);
+
+% CMA-ES
+cmaes(population)
+
+
+
+setenv('PATH', old_PATH);
+
+
+
+
+
 if load_flag==0
     
     % CREATE INITIAL POPULATION
